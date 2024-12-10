@@ -1,0 +1,78 @@
+---
+title: "STAT436 HW 4"
+output: html_document
+date: "2024-12-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+
+if(!require(shiny)) install.packages("ggplot2")
+if(!require(ggplot2)) install.packages("ggfortify")
+if(!require(dplyr)) install.packages("ggcorrplot")
+if(!require(dplyr)) install.packages("dplyr")
+
+library(ggplot2)
+library(ggfortify)
+library(ggcorrplot)
+library(dplyr)
+
+data <- read.csv("https://drive.google.com/uc?export=download&id=1ulO3XuH_Xl52qW2kuxXmYclxOPeWv_bI")
+
+print(colnames(data))
+
+data <- data %>%
+  mutate(across(where(is.numeric), ~ ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+
+numerical_data <- data %>%
+  select(
+    `App.Usage.Time..min.day.`,
+    `Screen.On.Time..hours.day.`,
+    `Battery.Drain..mAh.day.`,
+    `Number.of.Apps.Installed`,
+    `Data.Usage..MB.day.`,
+    Age
+  ) %>%
+  scale()
+
+pca <- prcomp(numerical_data, center = TRUE, scale. = TRUE)
+
+os_column <- data$`Operating.System`
+
+pca_plot <- autoplot(
+  pca,
+  data = data.frame(numerical_data, Operating.System = os_column),
+  colour = "Operating.System",
+  frame = TRUE,
+  frame.type = "norm"
+) +
+  ggtitle("PCA: User Behavior Clusters") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+print(pca_plot)
+
+cor_matrix <- cor(numerical_data, use = "pairwise.complete.obs")
+
+heatmap_plot <- ggcorrplot(
+  cor_matrix,
+  method = "circle",
+  type = "lower",
+  lab = TRUE,
+  lab_size = 3,
+  colors = c("red", "white", "blue"),
+  title = "Correlation Heatmap: User Behavior and Demographics"
+) +
+  theme_minimal()
+
+print(heatmap_plot)
+
+ggsave("pca_plot.png", pca_plot, width = 8, height = 6)
+ggsave("heatmap_plot.png", heatmap_plot, width = 8, height = 6)
+
+
+```
